@@ -1,5 +1,7 @@
 import pygame as p
-from ChessEngine import GameState
+import ChessEngine
+from ChessEngine import GameState, Move
+
 
 width = height = 512
 dimension = 8 #поле шахматное 8 * 8
@@ -20,10 +22,40 @@ def main():
     gs = GameState()
     loadImages()
     running = True
+    validMoves = gs.getValidMoves()
+    moveMade = False 
+    loadImages()
+    running = True
+    sqSelected = ()  # Отслеживание последнего щелчка игрока
+    playerClicks = []  # Отслеживание щелчков игрока на доске
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running == False
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()  # Позиция мышки (x, y)
+                col = location[0] // sq_size
+                row = location[1] // sq_size
+                if sqSelected == (row, col):  # Проверка, щелкнул ли игрок на один и тот же квадрат дважды или нет
+                    sqSelected = ()  # Отмена двойного нажатия
+                    playerClicks = []  # Сброс кликов игрока
+                else:
+                    sqSelected = (row, col)
+                    playerClicks.append(sqSelected)  # Добавление и первого, и второго клика в список
+                if len(playerClicks) == 2:  # Проверка после второго клика - был ли он совершен
+                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                    print(move.getChessNotation())
+                    if move in validMoves:
+                        gs.makeMove(move)
+                        moveMade = True
+                    sqSelected = ()  # Сброс кликов игрока
+                    playerClicks = []
+        
+
+        if moveMade:
+            validMoves = gs.getValidMoves()
+            moveMade = False
+
         drawGameState(screen, gs)
         clock.tick(max_FPS)
         p.display.flip()
